@@ -32,7 +32,7 @@ void	handler(int sig)
 
 int	main(void)
 {
-	int		pid;
+	int	pid;
 
 	pid = getpid();
 	ft_printf("Server PID: %d\n", pid);
