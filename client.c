@@ -6,43 +6,93 @@
 /*   By: asaenko <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/21 16:55:33 by asaenko           #+#    #+#             */
-/*   Updated: 2024/06/21 18:23:23 by asaenko          ###   ########.fr       */
+/*   Updated: 2024/07/07 20:44:51 by asaenko          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minitalk.h"
 
-void	send_char(int pid, char c)
-{
-	int	i;
+static volatile sig_atomic_t ack_received = 0;
 
-	i = 0;
-	while (i < 8)
+void	handle_ack(int sig)
+{
+	if (sig == SIGUSR1)
 	{
-		if (c & 1)
-			kill(pid, SIGUSR1);
-		else
-			kill(pid, SIGUSR2);
-		c >>= 1;
-		i++;
-		usleep(50);
+		ack_received = 1;
 	}
+	else if (sig == SIGUSR2)
+	{
+		write(1, "\nMessage acknowledged by server!\n", 33);
+		exit(EXIT_SUCCESS);
+	}
+}
+
+void	setup_ack_handler(int signum)
+{
+	struct sigaction	sa;
+
+	sa.sa_flags = 0;
+	sa.sa_handler = handle_ack;
+	sigemptyset(&sa.sa_mask);
+	if (sigaction(signum, &sa, NULL) == -1)
+	{
+		ft_printf("sigaction");
+		exit(EXIT_FAILURE);
+	}
+}
+
+void	send_char(char c, pid_t pid)
+{
+	int	bit;
+
+	bit = 0;
+	while (bit < 8)
+	{
+		ack_received = 0;
+		if (c & (1 << bit))
+		{
+			kill(pid, SIGUSR1);
+		}
+		else
+		{
+			kill(pid, SIGUSR2);
+		}
+		while (!ack_received)
+		{
+			usleep(100);
+		}
+		bit++;
+	}
+}
+
+void	send_string(const char *str, pid_t pid)
+{
+	while (*str)
+	{
+		send_char(*str, pid);
+		str++;
+	}
+	send_char('\0', pid);
 }
 
 int	main(int argc, char **argv)
 {
-	int		pid;
-	char	*message;
+	pid_t	server_pid;
+	const char	*message;
 
 	if (argc != 3)
 	{
-		ft_printf("Usage: %s [PID] [string]\n", argv[0]);
-		return (1);
+		write(1, "Usage: <server_pid> <message>\n", 30);
+		exit(EXIT_FAILURE);
 	}
-	pid = ft_atoi(argv[1]);
+	server_pid = (pid_t)atoi(argv[1]);
 	message = argv[2];
-	while (*message)
-		send_char(pid, *message++);
-	send_char(pid, 0);
-	return (0);
+	setup_ack_handler(SIGUSR1);
+	setup_ack_handler(SIGUSR2);
+	send_string(message, server_pid);
+	while (1)
+	{
+		pause();
+	}
+	return 0;
 }
