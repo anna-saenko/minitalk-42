@@ -6,51 +6,60 @@
 #    By: asaenko <marvin@42.fr>                     +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/06/21 16:53:37 by asaenko           #+#    #+#              #
-#    Updated: 2024/06/21 18:27:05 by asaenko          ###   ########.fr        #
+#    Updated: 2024/07/07 20:55:54 by asaenko          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 CC = gcc
-
 CFLAGS = -Wall -Wextra -Werror
 
 SERVER_SRC = server.c
-
 CLIENT_SRC = client.c
+SERVER_BONUS_SRC = server_bonus.c
+CLIENT_BONUS_SRC = client_bonus.c
 
-LIBFT = libft/libft.a
+LIBFT_DIR = libft
+FT_PRINTF_DIR = ft_printf
 
-FT_PRINTF = ft_printf/libftprintf.a
+LIBFT = $(LIBFT_DIR)/libft.a
+FT_PRINTF = $(FT_PRINTF_DIR)/libftprintf.a
 
 SERVER_NAME = server
-
 CLIENT_NAME = client
+SERVER_BONUS_NAME = server_bonus
+CLIENT_BONUS_NAME = client_bonus
 
 all: $(SERVER_NAME) $(CLIENT_NAME)
 
+bonus: $(SERVER_BONUS_NAME) $(CLIENT_BONUS_NAME)
+
 $(SERVER_NAME): $(SERVER_SRC) $(LIBFT) $(FT_PRINTF)
-	$(CC) $(CFLAGS) $(SERVER_SRC) $(LIBFT) $(FT_PRINTF) -o $(SERVER_NAME)
+	$(CC) $(CFLAGS) $^ -o $@
 
 $(CLIENT_NAME): $(CLIENT_SRC) $(LIBFT) $(FT_PRINTF)
-	$(CC) $(CFLAGS) $(CLIENT_SRC) $(LIBFT) $(FT_PRINTF) -o $(CLIENT_NAME)
+	$(CC) $(CFLAGS) $^ -o $@
+
+$(SERVER_BONUS_NAME): $(SERVER_BONUS_SRC) $(LIBFT) $(FT_PRINTF)
+	$(CC) $(CFLAGS) $^ -o $@
+
+$(CLIENT_BONUS_NAME): $(CLIENT_BONUS_SRC) $(LIBFT) $(FT_PRINTF)
+	$(CC) $(CFLAGS) $^ -o $@
 
 $(LIBFT):
-	make -C libft
+	$(MAKE) -C $(LIBFT_DIR)
 
 $(FT_PRINTF):
-	make -C ft_printf
+	$(MAKE) -C $(FT_PRINTF_DIR)
 
 clean:
-	make clean -C libft
-	make clean -C ft_printf
+	$(MAKE) clean -C $(LIBFT_DIR)
+	$(MAKE) clean -C $(FT_PRINTF_DIR)
+	rm -f $(SERVER_NAME) $(CLIENT_NAME) $(SERVER_BONUS_NAME) $(CLIENT_BONUS_NAME)
 
 fclean: clean
-	make fclean -C libft
-	make fclean -C ft_printf
-	rm -f $(SERVER_NAME) $(CLIENT_NAME)
+	$(MAKE) fclean -C $(LIBFT_DIR)
+	$(MAKE) fclean -C $(FT_PRINTF_DIR)
 
-re: fclean all
+re: fclean all bonus
 
-.PHONY: all clean fclean re
-
-
+.PHONY: all clean fclean re bonus
